@@ -1,0 +1,163 @@
+# Katalog aktivitas nonklinis yang boleh disarankan chatbot.
+# Langkah ditulis ulang dengan bahasa sendiri dari sumber yang dicantumkan.
+- id: napas-lambat
+  title: Napas lambat 2 menit
+  duration_min: 2
+  tags: [cemas, panik, tegang, sulit tidur, stres]
+  description: Memperlambat napas untuk membantu tubuh lebih tenang saat cemas atau tegang.
+  steps:
+    - Duduk atau berbaring dengan nyaman, letakkan satu tangan di perut.
+    - Tarik napas pelan lewat hidung sambil menghitung sampai 4, rasakan perut mengembang.
+    - Embuskan perlahan lewat mulut sambil menghitung sampai 6.
+    - Ulangi selama sekitar 2 menit. Jika pusing, kembali bernapas biasa.
+  source_name: WHO, Anxiety disorders fact sheet (teknik relaksasi napas lambat)
+  source_url: https://www.who.int/news-room/fact-sheets/detail/anxiety-disorders
+
+- id: grounding-dwm
+  title: Grounding saat emosi terasa kuat
+  duration_min: 3
+  tags: [cemas, overthinking, emosi kuat, panik, stres]
+  description: Menyadari pikiran dan perasaan, terhubung dengan tubuh, lalu kembali fokus ke sekitar.
+  steps:
+    - Sadari apa yang sedang kamu pikirkan dan rasakan, cukup diakui tanpa dilawan.
+    - Perlambat dan sambungkan dengan tubuh, misalnya tekan telapak kaki ke lantai atau regangkan bahu.
+    - Arahkan perhatian ke sekitar. Sebutkan dalam hati beberapa hal yang bisa kamu lihat dan dengar.
+    - Lanjutkan kegiatanmu dengan perhatian penuh.
+  source_name: WHO, Doing What Matters in Times of Stress (2020), bagian Grounding. Lisensi CC BY-NC-SA 3.0 IGO
+  source_url: https://www.who.int/publications/i/item/9789240003927
+
+- id: melepas-pikiran
+  title: Menamai pikiran yang mengganggu
+  duration_min: 3
+  tags: [overthinking, pikiran negatif, cemas, insecure]
+  description: Mengambil jarak dari pikiran sulit dengan cara menyadari dan menamainya.
+  steps:
+    - Perhatikan pikiran yang sedang mengganggu, misalnya "aku pasti gagal".
+    - Beri nama, contohnya "Aku sedang punya pikiran bahwa aku pasti gagal".
+    - Sadari bahwa itu pikiran, bukan fakta yang pasti benar.
+    - Kembalikan perhatian ke hal yang sedang kamu kerjakan.
+  source_name: WHO, Doing What Matters in Times of Stress (2020), bagian Unhooking. Lisensi CC BY-NC-SA 3.0 IGO
+  source_url: https://www.who.int/publications/i/item/9789240003927
+
+- id: relaksasi-otot
+  title: Relaksasi otot progresif singkat
+  duration_min: 7
+  tags: [tegang, sulit tidur, cemas, stres]
+  description: Menegangkan lalu melemaskan kelompok otot secara bergantian untuk melepas ketegangan.
+  steps:
+    - Duduk atau berbaring dengan nyaman.
+    - Kepalkan tangan sekitar 5 detik, lalu lepaskan dan rasakan bedanya selama 10 detik.
+    - Lanjutkan ke bahu, wajah, perut, dan kaki secara bergantian.
+    - Akhiri dengan beberapa napas pelan.
+  source_name: WHO, Anxiety disorders fact sheet (progressive muscle relaxation)
+  source_url: https://www.who.int/news-room/fact-sheets/detail/anxiety-disorders
+
+- id: jalan-kaki
+  title: Jalan kaki 10 menit
+  duration_min: 10
+  tags: [suasana hati turun, stres, jenuh, lelah mental, sedih]
+  description: Aktivitas fisik ringan seperti jalan kaki singkat dapat membantu suasana hati.
+  steps:
+    - Pilih rute aman di sekitar kampus atau rumah.
+    - Jalan santai sekitar 10 menit tanpa target kecepatan.
+    - Perhatikan hal di sekitar, misalnya suara, udara, atau warna.
+  source_name: WHO, Depression dan Anxiety disorders fact sheet (anjuran aktivitas fisik)
+  source_url: https://www.who.int/news-room/fact-sheets/detail/depression
+
+- id: langkah-kecil
+  title: Satu langkah kecil yang menyenangkan
+  duration_min: 15
+  tags: [sedih, malas, kehilangan minat, suasana hati turun]
+  description: Melakukan satu kegiatan kecil yang dulu kamu nikmati, walau sedang tidak bersemangat.
+  steps:
+    - Tulis tiga kegiatan kecil yang biasanya kamu suka, misalnya mendengar lagu atau masak mi.
+    - Pilih satu yang paling mudah dan lakukan 10 sampai 15 menit hari ini.
+    - Setelahnya, perhatikan perasaanmu tanpa menilai berhasil atau tidak.
+  source_name: WHO, Depression fact sheet (tetap melakukan kegiatan yang dinikmati)
+  source_url: https://www.who.int/news-room/fact-sheets/detail/depression
+
+- id: hubungi-orang-tepercaya
+  title: Menghubungi satu orang tepercaya
+  duration_min: 10
+  tags: [kesepian, sedih, stres, butuh cerita]
+  description: Terhubung dengan orang lain dapat meringankan beban.
+  steps:
+    - Pilih satu orang yang membuatmu merasa aman, misalnya teman, keluarga, atau kakak tingkat.
+    - Kirim pesan singkat, tidak harus langsung cerita semuanya.
+    - Kalau belum siap cerita, cukup ngobrol santai.
+  source_name: WHO Depression fact sheet; Kemenkes, Stress Management (2023)
+  source_url: https://keslan.kemkes.go.id/view_artikel/2917/stress-management-kelola-kesulitan-menjadi-kemudahan
+
+- id: rutinitas-tidur
+  title: Rutinitas sebelum tidur
+  duration_min: 30
+  tags: [sulit tidur, begadang, lelah, stres]
+  description: Kebiasaan sederhana agar tidur lebih teratur dan nyenyak.
+  steps:
+    - Tentukan jam tidur dan bangun yang kurang lebih sama setiap hari.
+    - Matikan atau jauhkan gawai sekitar 30 menit sebelum tidur.
+    - Hindari kopi, teh pekat, dan minuman berenergi menjelang malam.
+    - Buat kamar redup dan tenang, lalu lakukan relaksasi singkat.
+  source_name: Kemenkes, Penting Tidur (2025)
+  source_url: https://keslan.kemkes.go.id/read/2539/penting-tidur
+
+- id: menulis-perasaan
+  title: Menulis perasaan 5 menit
+  duration_min: 5
+  tags: [overthinking, emosi kuat, bingung, sedih, stres]
+  description: Menuangkan isi kepala ke tulisan untuk membantu memberi ruang pada emosi.
+  steps:
+    - Siapkan catatan di ponsel atau kertas.
+    - Tulis apa yang kamu rasakan selama 5 menit tanpa mengedit.
+    - Beri nama emosi yang muncul, misalnya kecewa, takut, atau marah.
+    - Akhiri dengan satu kalimat baik untuk dirimu sendiri.
+  source_name: WHO, Doing What Matters in Times of Stress (2020), bagian Making Room. Lisensi CC BY-NC-SA 3.0 IGO
+  source_url: https://www.who.int/publications/i/item/9789240003927
+
+- id: bersyukur
+  title: Tiga hal baik hari ini
+  duration_min: 5
+  tags: [sedih, suasana hati turun, stres, refleksi]
+  description: Melatih perhatian pada hal baik kecil yang terjadi hari ini.
+  steps:
+    - Sebelum tidur, tulis tiga hal baik yang terjadi hari ini, sekecil apa pun.
+    - Untuk masing-masing, tulis singkat kenapa hal itu terasa baik.
+  source_name: Kemenkes, Stress Management (2023), anjuran memperbanyak rasa syukur
+  source_url: https://keslan.kemkes.go.id/view_artikel/2917/stress-management-kelola-kesulitan-menjadi-kemudahan
+
+- id: baik-pada-diri
+  title: Berbicara baik pada diri sendiri
+  duration_min: 3
+  tags: [insecure, menyalahkan diri, gagal, kecewa]
+  description: Menanggapi diri sendiri seperti menanggapi sahabat yang sedang kesulitan.
+  steps:
+    - Letakkan tangan di dada atau bahu, tarik napas pelan.
+    - Akui bahwa kamu sedang kesulitan, misalnya "Ini memang berat".
+    - Tanyakan, apa yang akan kamu katakan pada sahabat di posisi yang sama, lalu katakan itu pada dirimu.
+  source_name: WHO, Doing What Matters in Times of Stress (2020), bagian Being Kind. Lisensi CC BY-NC-SA 3.0 IGO
+  source_url: https://www.who.int/publications/i/item/9789240003927
+
+- id: langkah-sesuai-nilai
+  title: Satu tindakan sesuai nilai
+  duration_min: 10
+  tags: [kehilangan arah, jenuh, motivasi, tujuan]
+  description: Memilih satu tindakan kecil yang sejalan dengan hal yang penting bagimu.
+  steps:
+    - Pikirkan satu nilai penting untukmu, misalnya peduli, tekun, atau jujur.
+    - Pilih satu tindakan kecil hari ini yang mencerminkan nilai itu.
+    - Lakukan, lalu catat bagaimana rasanya.
+  source_name: WHO, Doing What Matters in Times of Stress (2020), bagian Acting on Your Values. Lisensi CC BY-NC-SA 3.0 IGO
+  source_url: https://www.who.int/publications/i/item/9789240003927
+
+- id: pecah-tugas
+  title: Memecah tugas besar
+  duration_min: 10
+  tags: [tugas menumpuk, deadline, overwhelmed, prokrastinasi, stres akademik]
+  description: Mengurangi rasa kewalahan dengan memecah tugas menjadi langkah kecil yang jelas.
+  steps:
+    - Tulis semua tugas yang sedang menumpuk.
+    - Pilih satu tugas dengan tenggat paling dekat.
+    - Pecah menjadi 3 sampai 5 langkah kecil yang bisa selesai dalam 25 menit.
+    - Kerjakan langkah pertama saja dulu, lalu istirahat sebentar.
+  source_name: WHO Depression fact sheet (problem-solving sebagai pendekatan psikologis); disederhanakan untuk konteks akademik
+  source_url: https://www.who.int/news-room/fact-sheets/detail/depression

@@ -97,7 +97,11 @@ void main() {
     final deps = await TestDeps.signedIn();
     await _openProfile(tester, deps);
 
-    await tester.ensureVisible(find.text('Gelap'));
+    await tester.scrollUntilVisible(
+      find.text('Gelap'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gelap'));
     await tester.pumpAndSettle();

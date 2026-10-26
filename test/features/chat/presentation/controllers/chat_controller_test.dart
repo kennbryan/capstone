@@ -63,4 +63,38 @@ void main() {
       isFalse,
     );
   });
+
+  test('continues the conversation and deletes it on clear', () async {
+    final deps = await TestDeps.signedIn();
+    final container = deps.container();
+    await container.read(authControllerProvider.future);
+    await container.read(chatControllerProvider.future);
+    final notifier = container.read(chatControllerProvider.notifier);
+
+    await notifier.send('Halo');
+    await notifier.send('Lanjut');
+    expect(ChatMockSource.sentConversationIds, [
+      null,
+      ChatMockSource.conversation,
+    ]);
+
+    await notifier.clearHistory();
+    expect(ChatMockSource.deletedConversations, [ChatMockSource.conversation]);
+    await notifier.send('Baru lagi');
+    expect(ChatMockSource.sentConversationIds.last, isNull);
+  });
+
+  test('conversation id survives a restart through local history', () async {
+    final deps = await TestDeps.signedIn();
+    final first = deps.container();
+    await first.read(authControllerProvider.future);
+    await first.read(chatControllerProvider.future);
+    await first.read(chatControllerProvider.notifier).send('Halo');
+    await pumpEventQueue();
+
+    final second = deps.container();
+    await second.read(authControllerProvider.future);
+    final state = await second.read(chatControllerProvider.future);
+    expect(state.conversationId, ChatMockSource.conversation);
+  });
 }

@@ -77,4 +77,63 @@ void main() {
     await tester.tap(find.text('Batal'));
     await tester.pumpAndSettle();
   });
+
+  testWidgets('assistant actions render as cards; unknown ones are hidden', (
+    tester,
+  ) async {
+    await _openChat(tester, await TestDeps.signedIn());
+    await _send(tester, '#tes-aksi');
+
+    expect(find.text('Grounding saat emosi terasa kuat'), findsOneWidget);
+    expect(find.text('3 menit'), findsOneWidget);
+    expect(find.text('Chat dengan psikolog'), findsOneWidget);
+    expect(find.text('Siapkan ringkasan untuk psikolog'), findsOneWidget);
+    expect(find.text('Disembunyikan'), findsNothing);
+  });
+
+  testWidgets('an activity action opens its steps', (tester) async {
+    await _openChat(tester, await TestDeps.signedIn());
+    await _send(tester, '#tes-aksi');
+
+    await tester.tap(find.text('Grounding saat emosi terasa kuat'));
+    await tester.pumpAndSettle();
+    expect(find.text('Langkah-langkah'), findsOneWidget);
+    expect(find.text('Tekan telapak kaki ke lantai.'), findsOneWidget);
+    expect(find.text('Sumber: WHO'), findsOneWidget);
+    await tester.tap(find.text('Selesai'));
+    await tester.pumpAndSettle();
+    expect(find.text('Langkah-langkah'), findsNothing);
+  });
+
+  testWidgets('summary action shows an editable draft that is not sent', (
+    tester,
+  ) async {
+    await _openChat(tester, await TestDeps.signedIn());
+    await _send(tester, '#tes-aksi');
+
+    await tester.tap(find.text('Siapkan ringkasan untuk psikolog'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ringkasan untuk psikolog'), findsOneWidget);
+    expect(find.textContaining('tugas kuliah menumpuk'), findsOneWidget);
+    expect(find.textContaining('belum dikirim'), findsOneWidget);
+    expect(find.text('Salin ringkasan'), findsOneWidget);
+  });
+
+  testWidgets('psychologist action switches to the Psikolog segment', (
+    tester,
+  ) async {
+    await _openChat(tester, await TestDeps.signedIn());
+    await _send(tester, '#tes-aksi');
+
+    await tester.tap(find.text('Chat dengan psikolog'));
+    await tester.pumpAndSettle();
+    expect(find.text('Layanan psikolog MSU'), findsOneWidget);
+
+    // Back to the assistant and again: the action still switches.
+    await tester.tap(find.text('Asisten AI'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chat dengan psikolog'));
+    await tester.pumpAndSettle();
+    expect(find.text('Layanan psikolog MSU'), findsOneWidget);
+  });
 }

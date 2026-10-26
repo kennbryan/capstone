@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:msu_wellbeing/features/chat/domain/entities/chat_action.dart';
 import 'package:msu_wellbeing/features/chat/domain/entities/chat_message.dart';
 import 'package:msu_wellbeing/features/learn/domain/entities/learn_ref.dart';
 
@@ -16,6 +17,8 @@ abstract class ChatMessageDto with _$ChatMessageDto {
     @Default('normal') String type,
     @Default(<SourceRefDto>[]) List<SourceRefDto> sources,
     @Default(<LearnRefDto>[]) List<LearnRefDto> suggestions,
+    @Default(<ChatActionDto>[]) List<ChatActionDto> actions,
+    String? conversationId,
   }) = _ChatMessageDto;
 
   factory fromJson(Map<String, Object?> json) => _$ChatMessageDtoFromJson(json);
@@ -28,21 +31,106 @@ abstract class ChatMessageDto with _$ChatMessageDto {
     type: message.type.name,
     sources: [
       for (final source in message.sources)
-        SourceRefDto(articleId: source.articleId, title: source.title),
+        SourceRefDto(
+          articleId: source.articleId,
+          title: source.title,
+          sourceName: source.sourceName,
+          url: source.url,
+        ),
     ],
     suggestions: [
       for (final ref in message.suggestions)
         LearnRefDto(kind: ref.kind.name, id: ref.id, title: ref.title),
     ],
+    actions: [
+      for (final action in message.actions) ChatActionDto.fromEntity(action),
+    ],
+    conversationId: message.conversationId,
   );
 }
 
 @freezed
 abstract class SourceRefDto with _$SourceRefDto {
-  const factory({required String articleId, required String title}) =
-      _SourceRefDto;
+  const factory({
+    required String articleId,
+    required String title,
+    String? sourceName,
+    String? url,
+  }) = _SourceRefDto;
 
   factory fromJson(Map<String, Object?> json) => _$SourceRefDtoFromJson(json);
+}
+
+/// `actions[]`: `type` is snake_case (`call_phone`, `open_activity`, ...)
+/// and `payload` depends on it (see `ChatRemoteSource`).
+@freezed
+abstract class ChatActionDto with _$ChatActionDto {
+  const factory({
+    required String type,
+    required String label,
+    @Default(<String, Object?>{}) Map<String, Object?> payload,
+  }) = _ChatActionDto;
+
+  factory fromJson(Map<String, Object?> json) => _$ChatActionDtoFromJson(json);
+
+  factory fromEntity(ChatAction action) => ChatActionDto(
+    type: _snake(action.type.name),
+    label: action.label,
+    payload: {
+      if (action.phone != null) 'phone': action.phone,
+      if (action.url != null) 'url': action.url,
+      ...?action.activity?.toJson(),
+    },
+  );
+}
+
+String _snake(String camel) => camel.replaceAllMapped(
+  RegExp('[A-Z]'),
+  (match) => '_${match[0]!.toLowerCase()}',
+);
+
+ActivityGuide? _activity(Map<String, Object?> payload) {
+  final id = payload['id'];
+  final title = payload['title'];
+  final steps = payload['steps'];
+  if (id is! String || title is! String || steps is! List) return null;
+  return ActivityGuide(
+    id: id,
+    title: title,
+    steps: [for (final step in steps) '$step'],
+    description: payload['description'] as String? ?? '',
+    durationMin: (payload['durationMin'] as num?)?.toInt(),
+    sourceName: payload['sourceName'] as String?,
+    sourceUrl: payload['sourceUrl'] as String?,
+  );
+}
+
+extension on ActivityGuide {
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'title': title,
+    'steps': steps,
+    'description': description,
+    'durationMin': durationMin,
+    'sourceName': sourceName,
+    'sourceUrl': sourceUrl,
+  };
+}
+
+extension ChatActionDtoMapper on ChatActionDto {
+  ChatAction toEntity() {
+    final kind = ChatActionType.values.firstWhere(
+      (value) => _snake(value.name) == type,
+      orElse: () => ChatActionType.unknown,
+    );
+    return ChatAction(
+      type: kind,
+      label: label,
+      phone: payload['phone'] as String?,
+      url: payload['url'] as String?,
+      activity: kind == ChatActionType.openActivity ? _activity(payload) : null,
+    );
+  }
 }
 
 @freezed
@@ -65,7 +153,12 @@ extension ChatMessageDtoMapper on ChatMessageDto {
     type: _byName(MessageType.values, type, MessageType.normal),
     sources: [
       for (final source in sources)
-        SourceRef(articleId: source.articleId, title: source.title),
+        SourceRef(
+          articleId: source.articleId,
+          title: source.title,
+          sourceName: source.sourceName,
+          url: source.url,
+        ),
     ],
     suggestions: [
       for (final ref in suggestions)
@@ -75,5 +168,12 @@ extension ChatMessageDtoMapper on ChatMessageDto {
           title: ref.title,
         ),
     ],
+    actions: [
+      for (final action in actions)
+        if (action.toEntity() case final entity
+            when entity.type != ChatActionType.unknown)
+          entity,
+    ],
+    conversationId: conversationId,
   );
 }

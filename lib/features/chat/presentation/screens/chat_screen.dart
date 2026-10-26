@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:msu_wellbeing/core/router/app_routes.dart';
 import 'package:msu_wellbeing/core/security/secure_screen.dart';
 import 'package:msu_wellbeing/core/theme/app_spacing.dart';
 import 'package:msu_wellbeing/core/widgets/tab_scaffold.dart';
@@ -106,8 +108,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ],
                   selected: {_tab},
-                  onSelectionChanged: (selection) =>
-                      setState(() => _tab = selection.first),
+                  onSelectionChanged: (selection) {
+                    setState(() => _tab = selection.first);
+                    // Keeps `?tab=` in sync, so a later
+                    // `context.go(AppRoutes.chatPsychologist)` (e.g. from an
+                    // assistant action) always switches the segment.
+                    context.go(
+                      _tab == ChatTab.ai
+                          ? AppRoutes.chatAssistant
+                          : AppRoutes.chatPsychologist,
+                    );
+                  },
                 ),
               ),
             ),

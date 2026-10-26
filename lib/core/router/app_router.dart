@@ -9,6 +9,7 @@ import 'package:msu_wellbeing/features/auth/presentation/controllers/startup_con
 import 'package:msu_wellbeing/features/auth/presentation/screens/lock_screen.dart';
 import 'package:msu_wellbeing/features/auth/presentation/screens/login_screen.dart';
 import 'package:msu_wellbeing/features/auth/presentation/screens/splash_screen.dart';
+import 'package:msu_wellbeing/features/chat/presentation/screens/assistant_memory_screen.dart';
 import 'package:msu_wellbeing/features/chat/presentation/screens/chat_screen.dart';
 import 'package:msu_wellbeing/features/crisis/presentation/screens/crisis_screen.dart';
 import 'package:msu_wellbeing/features/home/presentation/screens/home_screen.dart';
@@ -129,6 +130,10 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'consent-history',
                     builder: (context, state) => const ConsentHistoryScreen(),
+                  ),
+                  GoRoute(
+                    path: 'ai-memory',
+                    builder: (context, state) => const AssistantMemoryScreen(),
                   ),
                 ],
               ),

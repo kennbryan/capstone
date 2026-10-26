@@ -3,6 +3,7 @@ import 'package:msu_wellbeing/core/network/api_exception.dart';
 import 'package:msu_wellbeing/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:msu_wellbeing/features/chat/data/chat_repository_impl.dart';
 import 'package:msu_wellbeing/features/chat/domain/entities/chat_message.dart';
+import 'package:msu_wellbeing/features/chat/domain/entities/summary_draft.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'chat_controller.freezed.dart';
@@ -14,6 +15,13 @@ abstract class ChatState with _$ChatState {
     required List<ChatMessage> messages,
     @Default(false) bool sending,
   }) = _ChatState;
+  const new _();
+
+  /// Conversation of the newest assistant reply, continued by the next
+  /// message.
+  String? get conversationId => messages.reversed
+      .map((message) => message.conversationId)
+      .firstWhere((id) => id != null, orElse: () => null);
 }
 
 /// Limits for the chat input.
@@ -54,7 +62,13 @@ class ChatController extends _$ChatController {
       ),
     );
 
-    final result = await ref.read(chatRepositoryProvider).send(trimmed);
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .send(
+          userMessage.text,
+          conversationId: current.conversationId,
+          displayName: ref.read(authControllerProvider).value?.displayName,
+        );
     final latest = state.value ?? current;
     return result.fold<ApiException?>(
       onSuccess: (reply) {
@@ -71,13 +85,19 @@ class ChatController extends _$ChatController {
     );
   }
 
-  /// Deletes the conversation from memory and the device.
+  /// Deletes the conversation from memory, the device, and the chatbot
+  /// server. The next message starts a new conversation.
   Future<void> clearHistory() async {
+    final repository = ref.read(chatRepositoryProvider);
+    final conversationId = state.value?.conversationId;
     final userId = ref.read(currentUserIdProvider);
-    if (userId != null) {
-      await ref.read(chatRepositoryProvider).clearHistory(userId);
-    }
+    if (userId != null) await repository.clearHistory(userId);
     state = const AsyncData(ChatState(messages: []));
+    // Best effort: the local copy is already gone, and the server keeps
+    // nothing new once the next message starts another conversation.
+    if (conversationId != null) {
+      await repository.deleteConversation(conversationId);
+    }
   }
 
   void _persist(List<ChatMessage> messages) {
@@ -85,4 +105,14 @@ class ChatController extends _$ChatController {
     if (userId == null) return;
     ref.read(chatRepositoryProvider).saveHistory(userId, messages).ignore();
   }
+}
+
+/// Draft summary of [conversationId] for the psychologist. Generated on
+/// request only, never sent automatically.
+@riverpod
+Future<SummaryDraft> summaryDraft(Ref ref, String conversationId) async {
+  final result = await ref
+      .watch(chatRepositoryProvider)
+      .summaryDraft(conversationId);
+  return result.unwrap();
 }

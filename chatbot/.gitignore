@@ -1,0 +1,13 @@
+# Secrets
+.env
+# .env* di .gitignore root ikut mengabaikan contoh ini
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Runtime data (database dan cache embedding dibuat ulang otomatis)
+runtime/

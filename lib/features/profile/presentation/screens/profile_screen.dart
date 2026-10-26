@@ -109,6 +109,12 @@ class ProfileScreen extends ConsumerWidget {
                   title: l10n.profileConsentHistory,
                   onTap: () => context.push(AppRoutes.consentHistory),
                 ),
+                tile(
+                  icon: Icons.psychology_alt_outlined,
+                  title: l10n.memoryTitle,
+                  subtitle: l10n.memorySubtitle,
+                  onTap: () => context.push(AppRoutes.assistantMemory),
+                ),
                 SwitchListTile(
                   secondary: const Icon(Icons.lock_outline),
                   title: Text(l10n.profileAppLock),
