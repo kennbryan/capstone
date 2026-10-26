@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:msu_wellbeing/core/router/app_routes.dart';
 import 'package:msu_wellbeing/core/theme/app_colors.dart';
 import 'package:msu_wellbeing/core/theme/app_spacing.dart';
+import 'package:msu_wellbeing/core/utils/link_launcher.dart';
 import 'package:msu_wellbeing/features/chat/domain/entities/chat_message.dart';
+import 'package:msu_wellbeing/features/chat/presentation/widgets/chat_action_card.dart';
 import 'package:msu_wellbeing/features/chat/presentation/widgets/crisis_inline_card.dart';
 import 'package:msu_wellbeing/features/learn/domain/entities/learn_ref.dart';
 import 'package:msu_wellbeing/features/learn/presentation/widgets/learn_ref_display.dart';
@@ -11,7 +14,7 @@ import 'package:msu_wellbeing/l10n/l10n.dart';
 
 /// Renders one message. User messages use the primary color; assistant
 /// messages use the cool `assistant` token; crisis replies become a
-/// [CrisisInlineCard].
+/// [CrisisInlineCard]. Sources, suggestions, and actions follow below.
 class MessageBubble extends StatelessWidget {
   const new({required this.message, super.key});
 
@@ -80,15 +83,7 @@ class MessageBubble extends StatelessWidget {
                   runSpacing: AppSpacing.xs,
                   children: [
                     for (final source in message.sources)
-                      ActionChip(
-                        avatar: const Icon(
-                          Icons.menu_book_outlined,
-                          size: AppSizes.iconSm,
-                        ),
-                        label: Text(l10n.chatSource(source.title)),
-                        onPressed: () =>
-                            context.push(AppRoutes.article(source.articleId)),
-                      ),
+                      _SourceChip(source: source),
                   ],
                 ),
               ],
@@ -96,10 +91,41 @@ class MessageBubble extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _SuggestionCard(suggestion: suggestion),
               ],
+              for (final action in message.actions) ...[
+                const SizedBox(height: AppSpacing.sm),
+                ChatActionCard(
+                  action: action,
+                  conversationId: message.conversationId,
+                ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Sumber: {title}". Opens the original source when it has a link,
+/// otherwise the in-app article.
+class _SourceChip extends ConsumerWidget {
+  const new({required this.source});
+
+  final SourceRef source;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final url = Uri.tryParse(source.url ?? '');
+    return ActionChip(
+      avatar: const Icon(Icons.menu_book_outlined, size: AppSizes.iconSm),
+      label: Text(
+        context.l10n.chatSource(source.title),
+        overflow: TextOverflow.ellipsis,
+      ),
+      tooltip: source.sourceName,
+      onPressed: url != null && url.hasScheme
+          ? () => ref.read(linkLauncherProvider).open(url)
+          : () => context.push(AppRoutes.article(source.articleId)),
     );
   }
 }
