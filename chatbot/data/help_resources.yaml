@@ -1,0 +1,53 @@
+# Info bantuan yang ditampilkan aplikasi. Hanya entri verified: true yang muncul di
+# template krisis. Periksa ulang secara berkala karena nomor dan jam layanan bisa berubah.
+- id: healing119
+  name: Healing119.id (Kementerian Kesehatan RI)
+  description: >-
+    Pertolongan pertama psikologis dan dukungan emosional, termasuk saat ada dorongan
+    untuk mengakhiri hidup. Gratis, tanpa pendaftaran, beroperasi 24 jam (antrean bisa penuh;
+    bila telepon sibuk, coba chat WhatsApp lewat situsnya).
+  phone: "119"
+  phone_note: ekstensi 8
+  url: https://www.healing119.id
+  verified: true
+  source: FAQ Layanan Hotline Healing119.id, Ditjen Kesmas Kemenkes, Agustus 2025
+  source_url: https://kesprimkom.kemkes.go.id/assets/uploads/contents/others/FAQ_Cegah_Bunuh_Diri%2C_Dukung_Kesehatan_Jiwa__Kenali_Layanan_Healing119.id.pdf
+  show_in_crisis: true
+
+- id: darurat-112
+  name: Layanan Darurat 112
+  description: Nomor darurat nasional untuk situasi yang mengancam nyawa.
+  phone: "112"
+  verified: true
+  source: Nomor darurat nasional Indonesia (Call Center 112)
+  show_in_crisis: true
+
+- id: igd-terdekat
+  name: IGD rumah sakit atau Puskesmas terdekat
+  description: Datangi langsung bila dalam bahaya dan tidak dapat terhubung ke layanan telepon.
+  verified: true
+  source: Anjuran FAQ Healing119.id (Kemenkes)
+  show_in_crisis: true
+
+- id: konseling-telu
+  name: Layanan Konseling Telkom University
+  description: >-
+    Konseling gratis untuk mahasiswa Telkom University bersama psikolog profesional,
+    luring di Ruang Layanan Psikologi Gedung Tokong Nanas atau daring. Jam layanan
+    sekitar 08.00 sampai 16.00 WIB pada hari kerja. Pendaftaran melalui Student Counseling
+    Call Center atau portal Telkom University Counseling Service.
+  url: https://studentaffairs.telkomuniversity.ac.id/konseling-gratis-untuk-mahasiswa-telkom-university/
+  verified: false  # nomor call center dan jadwal 2026 perlu dikonfirmasi ke Direktorat Kemahasiswaan
+  source: Berita SDGs Telkom University, 21 Maret 2024
+  source_url: https://sdgs.telkomuniversity.ac.id/news/telkom-university-strengthens-student-mental-health-support-through-comprehensive-counseling-services
+  show_in_crisis: false
+
+- id: psikolog-msu
+  name: Chat psikolog di aplikasi MSU
+  description: >-
+    Kanal chat dengan psikolog manusia di aplikasi. Bukan layanan darurat; waktu balasan
+    mengikuti jadwal psikolog.
+  action: open_psychologist_chat
+  verified: true
+  source: Fitur aplikasi
+  show_in_crisis: true

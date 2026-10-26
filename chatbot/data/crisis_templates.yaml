@@ -1,0 +1,38 @@
+# Template respons krisis. Teks ini TIDAK dibuat oleh LLM agar isinya konsisten dan dapat
+# ditinjau. Disusun mengikuti prinsip psychological first aid WHO (look, listen, link) dan
+# arahan Healing119.id: tunjukkan kepedulian, tanyakan keselamatan, hubungkan ke bantuan,
+# dorong agar tidak sendirian, tanpa menghakimi dan tanpa membahas metode.
+# Status: draft v1, sebaiknya ditinjau psikolog sebelum uji pengguna.
+
+version: 1
+templates:
+  self_harm_high: |-
+    Terima kasih sudah mau cerita ke aku. Kedengarannya kamu sedang menanggung sesuatu yang sangat berat, dan keselamatanmu penting banget.
+
+    Kalau kamu sedang dalam bahaya atau merasa bisa menyakiti diri sekarang, tolong segera hubungi bantuan:
+    • Healing119.id (Kemenkes): telepon 119 ekstensi 8 atau chat lewat www.healing119.id, gratis dan 24 jam
+    • Darurat: 112, atau datang ke IGD rumah sakit terdekat
+
+    Kalau bisa, jauhkan dulu benda yang bisa membahayakanmu, dan kabari satu orang yang kamu percaya supaya kamu tidak sendirian sekarang.
+
+    Aku chatbot, jadi aku tidak bisa memantau kondisimu secara langsung. Tapi aku bisa bantu menghubungkanmu ke psikolog MSU. Kamu mau?
+
+  harm_others_high: |-
+    Aku dengar kamu sedang merasakan emosi yang sangat kuat. Itu berat, dan aku ingin semua orang tetap aman, termasuk kamu.
+
+    Kalau kamu merasa bisa kehilangan kendali dan menyakiti orang lain, coba beri jarak dulu dari orang atau situasi itu, lalu hubungi bantuan:
+    • Healing119.id (Kemenkes): telepon 119 ekstensi 8 atau chat lewat www.healing119.id
+    • Darurat: 112
+
+    Aku chatbot dan tidak bisa memantau situasi secara langsung, tapi aku bisa bantu menghubungkanmu ke psikolog MSU. Kamu mau?
+
+  llm_unavailable: |-
+    Maaf, aku sedang tidak bisa memproses pesanmu dengan baik. Pesanmu tetap tersimpan.
+
+    Kalau kamu butuh bicara sekarang, kamu bisa membuka chat psikolog di aplikasi, atau menghubungi Healing119.id di 119 ekstensi 8 (gratis, 24 jam). Dalam keadaan darurat, hubungi 112.
+
+  guard_fallback: |-
+    Makasih sudah cerita. Untuk hal ini aku tidak bisa memberi penilaian atau saran medis, karena perlu dilihat langsung oleh psikolog atau dokter. Kalau kamu mau, aku bisa bantu menghubungkanmu ke psikolog MSU, atau kita bisa lanjut ngobrol soal apa yang sedang kamu rasakan.
+
+  report_request: |-
+    Hasil asesmen dan rapor kamu bisa dilihat langsung di menu Rapor, supaya datanya selalu sesuai versi resmi dari website. Aku tidak menafsirkan skor asesmen, tapi kalau ada hasil yang bikin kamu kepikiran, kamu bisa membahasnya dengan psikolog. Mau aku bukakan menu Rapor?
