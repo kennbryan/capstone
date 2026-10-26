@@ -47,6 +47,7 @@ flutter run --dart-define=API_BASE_URL=https://<backend-host>
 | Key | Default | Purpose |
 |---|---|---|
 | `API_BASE_URL` | `https://api.example.invalid` | Backend base URL (HTTPS required outside `dev`) |
+| `CHATBOT_BASE_URL` | same as `API_BASE_URL` | Chatbot service for the Asisten AI chat (`chatbot/`) |
 | `APP_ENV` | `dev` | `dev` / `staging` / `prod` (verbose logs off in `prod`) |
 | `DEMO_LOGIN` | `true` | Enables the five demo accounts (must be `false` in `prod`) |
 
@@ -62,6 +63,25 @@ Never commit real URLs, keys, or phone numbers.
 
 Without a backend, the backend features show their calm error state with
 *Coba lagi*; everything else works.
+
+### Asisten AI (chatbot)
+
+The AI assistant is a separate Python service in [`chatbot/`](chatbot/README.md)
+(FastAPI, OpenAI). To try the chat with a demo account:
+
+```sh
+cd chatbot
+python -m venv .venv && .venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+copy .env.example .env                             # set OPENAI_API_KEY
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Then run the app with
+`--dart-define=CHATBOT_BASE_URL=http://10.0.2.2:8000` (Android emulator).
+Replies can carry sources, exercise suggestions, and action buttons
+(help lines, psychologist, summary draft, activity steps); the assistant's
+memory is under *Profil > Memori Asisten AI*.
 
 ### Demo accounts
 
