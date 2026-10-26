@@ -8,6 +8,8 @@ import 'package:msu_wellbeing/features/assessment/data/sources/assessment_source
 import 'package:msu_wellbeing/features/auth/data/models/user_dto.dart';
 import 'package:msu_wellbeing/features/auth/data/sources/auth_source.dart';
 import 'package:msu_wellbeing/features/chat/data/models/chat_message_dto.dart';
+import 'package:msu_wellbeing/features/chat/data/models/memory_item_dto.dart';
+import 'package:msu_wellbeing/features/chat/data/models/summary_draft_dto.dart';
 import 'package:msu_wellbeing/features/chat/data/sources/chat_sources.dart';
 import 'package:msu_wellbeing/features/checkin/data/models/check_in_dto.dart';
 import 'package:msu_wellbeing/features/checkin/data/sources/checkin_sources.dart';
@@ -186,8 +188,9 @@ class CheckInMockSource implements CheckInSource {
   }
 }
 
-/// `/chatbot/messages`: rotates a plain reply, one with sources, and one
-/// with suggestions; `#tes-krisis` returns a crisis reply.
+/// `/chatbot/*`: rotates a plain reply, one with sources, and one with
+/// suggestions; `#tes-krisis` returns a crisis reply and `#tes-aksi` a
+/// reply with actions. Every reply belongs to conversation `conv_1`.
 class ChatMockSource implements ChatSource {
   new(this._settings, [Random? random]) : _random = random ?? Random();
 
@@ -195,21 +198,83 @@ class ChatMockSource implements ChatSource {
   final Random _random;
 
   static const crisisTrigger = '#tes-krisis';
+  static const actionsTrigger = '#tes-aksi';
+  static const conversation = 'conv_1';
   static int _turn = 0;
 
+  /// Conversation ids received by [send], in order.
+  static final sentConversationIds = <String?>[];
+
+  /// Conversations deleted through [deleteConversation].
+  static final deletedConversations = <String>[];
+
+  static final memoryItems = <MemoryItemDto>[];
+
   /// Restarts the reply rotation between tests.
-  static void reset() => _turn = 0;
+  static void reset() {
+    _turn = 0;
+    sentConversationIds.clear();
+    deletedConversations.clear();
+    memoryItems
+      ..clear()
+      ..add(
+        MemoryItemDto(
+          id: 'mem_1',
+          category: 'yang_membantu',
+          content: 'Jalan sore membantu menenangkan pikiran',
+          updatedAt: DateTime.utc(2026, 10, 20),
+        ),
+      );
+  }
 
   @override
-  Future<ChatMessageDto> send(String text) async {
+  Future<ChatMessageDto> send(
+    String text, {
+    String? conversationId,
+    String? displayName,
+  }) async {
+    sentConversationIds.add(conversationId);
     await _settings.latency(Duration(milliseconds: 600 + _random.nextInt(601)));
     final now = DateTime.now().toUtc();
     final id = 'fake_${now.microsecondsSinceEpoch}';
+    if (text.toLowerCase().contains(actionsTrigger)) {
+      return ChatMessageDto(
+        id: id,
+        role: 'assistant',
+        createdAt: now,
+        conversationId: conversation,
+        text: 'Kalau mau, kamu bisa bicara langsung dengan psikolog MSU.',
+        actions: const [
+          ChatActionDto(
+            type: 'open_activity',
+            label: 'Grounding saat emosi terasa kuat',
+            payload: {
+              'id': 'grounding-dwm',
+              'title': 'Grounding saat emosi terasa kuat',
+              'durationMin': 3,
+              'steps': ['Sadari pikiranmu.', 'Tekan telapak kaki ke lantai.'],
+              'sourceName': 'WHO',
+              'sourceUrl': 'https://www.who.int',
+            },
+          ),
+          ChatActionDto(
+            type: 'open_psychologist_chat',
+            label: 'Chat dengan psikolog',
+          ),
+          ChatActionDto(
+            type: 'prepare_summary',
+            label: 'Siapkan ringkasan untuk psikolog',
+          ),
+          ChatActionDto(type: 'not_supported_yet', label: 'Disembunyikan'),
+        ],
+      );
+    }
     if (text.toLowerCase().contains(crisisTrigger)) {
       return ChatMessageDto(
         id: id,
         role: 'assistant',
         type: 'crisis',
+        conversationId: conversation,
         createdAt: now,
         text:
             'Terima kasih sudah memberi tahu. Keselamatanmu sangat penting, '
@@ -222,6 +287,7 @@ class ChatMockSource implements ChatSource {
         id: id,
         role: 'assistant',
         createdAt: now,
+        conversationId: conversation,
         text:
             'Terima kasih sudah bercerita. Wajar merasa seperti itu. Kalau '
             'mau, ceritakan lebih banyak tentang apa yang paling terasa '
@@ -231,6 +297,7 @@ class ChatMockSource implements ChatSource {
         id: id,
         role: 'assistant',
         createdAt: now,
+        conversationId: conversation,
         text:
             'Wajar merasa tertekan saat tugas menumpuk. Materi ini mungkin '
             'bisa membantumu menyusun langkah kecil.',
@@ -242,6 +309,7 @@ class ChatMockSource implements ChatSource {
         id: id,
         role: 'assistant',
         createdAt: now,
+        conversationId: conversation,
         text:
             'Bagaimana kalau kita menenangkan diri sejenak? Latihan napas '
             'singkat bisa membantu tubuh terasa lebih rileks.',
@@ -250,6 +318,41 @@ class ChatMockSource implements ChatSource {
         ],
       ),
     };
+  }
+
+  @override
+  Future<void> deleteConversation(String conversationId) async {
+    await _settings.latency();
+    deletedConversations.add(conversationId);
+  }
+
+  @override
+  Future<SummaryDraftDto> summaryDraft(String conversationId) async {
+    await _settings.latency();
+    return const SummaryDraftDto(
+      summary: 'Aku sedang stres karena tugas kuliah menumpuk.',
+      topics: ['stres akademik', 'sulit tidur'],
+      tried: ['latihan napas'],
+      hopes: 'Cara membagi waktu belajar',
+    );
+  }
+
+  @override
+  Future<List<MemoryItemDto>> memory() async {
+    await _settings.latency();
+    return List.of(memoryItems);
+  }
+
+  @override
+  Future<void> deleteMemory(String memoryId) async {
+    await _settings.latency();
+    memoryItems.removeWhere((item) => item.id == memoryId);
+  }
+
+  @override
+  Future<void> clearMemory() async {
+    await _settings.latency();
+    memoryItems.clear();
   }
 }
 
