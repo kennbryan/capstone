@@ -1,0 +1,74 @@
+name: msu_wellbeing
+description: "MSU Well-being: a non-clinical mental well-being companion app for Masjid Syamsul 'Ulum, Telkom University."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  dio: ^5.11.1
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_secure_storage: ^11.2.0
+  freezed_annotation: ^3.1.0
+  go_router: ^18.1.1
+  # Version is pinned by flutter_localizations in the Flutter SDK.
+  intl: ^0.20.3
+  json_annotation: ^4.12.0
+  just_audio: ^0.10.6
+  local_auth: ^3.0.2
+  package_info_plus: ^10.2.2
+  riverpod_annotation: ^4.0.7
+  shared_preferences: ^2.5.6
+  url_launcher: ^6.3.3
+
+dev_dependencies:
+  # 2.17+ needs build 5, which riverpod_generator does not support yet.
+  build_runner: ^2.16.2
+  flutter_launcher_icons: ^0.14.4
+  flutter_test:
+    sdk: flutter
+  freezed: ^4.0.3
+  json_serializable: ^6.15.2
+  mocktail: ^1.0.5
+  riverpod_generator: ^4.0.9
+  riverpod_lint: ^3.1.9
+  very_good_analysis: ^11.0.0
+
+# Launcher icons from the placeholder mark (tool/generate_icons.dart).
+# TODO(DKMSU): regenerate from the official logo.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/icon.png
+  remove_alpha_ios: true
+  adaptive_icon_background: "#1F7A4D"
+  adaptive_icon_foreground: assets/icon/foreground.png
+  min_sdk_android: 24
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    # Royalty-free loops (see ASSETS.md). Missing files show "Segera hadir".
+    - assets/audio/
+    # Official MSU logo goes here as msu_logo.png (see ASSETS.md).
+    - assets/images/
+
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
