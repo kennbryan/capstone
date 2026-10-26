@@ -24,6 +24,7 @@ abstract final class AppRoutes {
   static const profile = '/profile';
   static const privacy = '/profile/privacy';
   static const consentHistory = '/profile/consent-history';
+  static const assistantMemory = '/profile/ai-memory';
 
   /// Startup gates handled by the router redirect.
   static const Set<String> gates = {splash, onboarding, consent, login, lock};
