@@ -53,16 +53,20 @@ class _EventLogInterceptor extends Interceptor {
 }
 
 /// Builds the configured [Dio]. Rejects `http://` base URLs outside dev.
+///
+/// [baseUrl] defaults to the main API.
 Dio createDio({
   required AppConfig config,
   required AuthInterceptor authInterceptor,
+  String? baseUrl,
+  Duration receiveTimeout = const Duration(seconds: 20),
 }) {
   config.validate();
   final dio = Dio(
     BaseOptions(
-      baseUrl: config.apiBaseUrl,
+      baseUrl: baseUrl ?? config.apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
+      receiveTimeout: receiveTimeout,
       contentType: Headers.jsonContentType,
     ),
   );
@@ -81,14 +85,29 @@ class SessionExpiry extends _$SessionExpiry {
   void signal() => state++;
 }
 
-@Riverpod(keepAlive: true)
-Dio dio(Ref ref) {
+AuthInterceptor _authInterceptor(Ref ref) {
   final storage = ref.watch(secureStorageProvider);
+  return AuthInterceptor(
+    readToken: () => storage.read(SecureKeys.accessToken),
+    onUnauthorized: () => ref.read(sessionExpiryProvider.notifier).signal(),
+  );
+}
+
+@Riverpod(keepAlive: true)
+Dio dio(Ref ref) => createDio(
+  config: ref.watch(appConfigProvider),
+  authInterceptor: _authInterceptor(ref),
+);
+
+/// Client for the chatbot service (`CHATBOT_BASE_URL`). AI replies can
+/// take longer than a normal API call, so it waits up to 45 seconds.
+@Riverpod(keepAlive: true)
+Dio chatbotDio(Ref ref) {
+  final config = ref.watch(appConfigProvider);
   return createDio(
-    config: ref.watch(appConfigProvider),
-    authInterceptor: AuthInterceptor(
-      readToken: () => storage.read(SecureKeys.accessToken),
-      onUnauthorized: () => ref.read(sessionExpiryProvider.notifier).signal(),
-    ),
+    config: config,
+    authInterceptor: _authInterceptor(ref),
+    baseUrl: config.chatbotBaseUrl,
+    receiveTimeout: const Duration(seconds: 45),
   );
 }
