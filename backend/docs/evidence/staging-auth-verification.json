@@ -1,0 +1,15 @@
+{
+  "status": "STAGING_TWO_TESTER_LOGIN_ME_AND_PROFILE_RLS_VERIFIED",
+  "completed_utc": "2026-11-04T15:59:32.648604+00:00",
+  "target_project_ref": "orxbprfixonwdwgjqmpv",
+  "tester_count": 2,
+  "backend_route_execution": "in-process FastAPI ASGI; no HTTP listener tested",
+  "missing_token_rejected": true,
+  "own_profile_contract_verified": true,
+  "cross_profile_read_hidden_both_directions": true,
+  "source_requests_made": false,
+  "env_file_read_or_changed": false,
+  "checkins_migration_applied_by_tool": false,
+  "checkins_tested": false,
+  "auth_sessions_created": true
+}

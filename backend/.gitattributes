@@ -1,0 +1,2 @@
+# Keep reviewed migration bytes stable across Windows and Unix checkouts.
+* text eol=lf

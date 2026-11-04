@@ -1,0 +1,17 @@
+{
+  "status": "STAGING_HTTP_ME_AND_CHECKINS_READBACK_VERIFIED",
+  "completed_utc": "2026-11-04T16:25:04.229691+00:00",
+  "target_project_ref": "orxbprfixonwdwgjqmpv",
+  "backend_url": "http://127.0.0.1:8002",
+  "test_date": "2000-01-01",
+  "tester_count": 2,
+  "authenticated_me_contract_verified": true,
+  "missing_and_false_token_rejection_verified": true,
+  "http_history_matches_direct_data_api": true,
+  "direct_cross_user_reads_hidden_both_directions": true,
+  "checkin_writes_performed": false,
+  "auth_sessions_created": true,
+  "source_requests_made_by_tool": false,
+  "env_file_read_or_changed": false,
+  "flutter_integration_tested": false
+}
