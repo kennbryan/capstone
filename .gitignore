@@ -51,6 +51,9 @@ app.*.map.json
 
 # Secrets and signing
 .env*
+.playwright-mcp/
+# Local database preparation may contain credentials; share reviewed docs separately.
+/database preperation/
 key.properties
 *.jks
 *.keystore

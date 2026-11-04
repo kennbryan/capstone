@@ -1,0 +1,22 @@
+{
+  "status": "STAGING_APPLICATION_SNAPSHOT_COMMITTED_AND_VERIFIED",
+  "completed_utc": "2026-11-04T15:50:31.094630+00:00",
+  "source_project_ref": "bofoowyzlnfhwcstlmgp",
+  "target_project_ref": "orxbprfixonwdwgjqmpv",
+  "backup_sha256": "0e785b0b3f2b5a5b4da7c8f35fbc42754048b733079958e035b7ac2d06159855",
+  "restored_row_counts": {
+    "auth.users": 6,
+    "auth.identities": 6,
+    "public.users": 6,
+    "public._prisma_migrations": 2
+  },
+  "row_snapshot_equality_verified_in_transaction": true,
+  "auth_migration_baseline_verified_without_replacement": true,
+  "source_database_connections": false,
+  "global_roles_replaced": false,
+  "old_login_sessions_copied": false,
+  "ledger_client_access_restricted": true,
+  "full_platform_restore_tested": false,
+  "checkins_migration_applied": false,
+  "login_after_restore_tested": false
+}

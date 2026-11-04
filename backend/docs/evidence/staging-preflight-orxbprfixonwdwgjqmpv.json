@@ -1,0 +1,23 @@
+{
+  "evidence_source": "SQL Editor result supplied by user; not an agent database connection",
+  "target_project_ref": "orxbprfixonwdwgjqmpv",
+  "database": "postgres",
+  "server_version": "17.11",
+  "server_version_num": 170011,
+  "auth_user_count": 0,
+  "website_profile_table_present": false,
+  "website_ledger_present": false,
+  "chatbot_schema_present": false,
+  "public_application_tables": [],
+  "public_application_table_count": 0,
+  "initial_empty_target_candidate": true,
+  "extensions": [
+    {"name": "pg_stat_statements", "schema": "extensions", "version": "1.11"},
+    {"name": "pgcrypto", "schema": "extensions", "version": "1.3"},
+    {"name": "plpgsql", "schema": "pg_catalog", "version": "1.0"},
+    {"name": "supabase_vault", "schema": "vault", "version": "0.3.1"},
+    {"name": "uuid-ossp", "schema": "extensions", "version": "1.1"}
+  ],
+  "restore_applied": false,
+  "checkins_migration_applied": false
+}

@@ -1,0 +1,19 @@
+{
+  "status": "STAGING_CHECKINS_READBACK_VERIFIED",
+  "completed_utc": "2026-11-04T16:15:31.116099+00:00",
+  "target_project_ref": "orxbprfixonwdwgjqmpv",
+  "test_date": "2000-01-01",
+  "tester_count": 2,
+  "mode": "verify-only",
+  "backend_route_execution": "fresh in-process FastAPI ASGI; no HTTP listener tested",
+  "source_requests_made": false,
+  "env_file_read_or_changed": false,
+  "auth_sessions_created": true,
+  "migration_applied_by_tool": false,
+  "own_history_and_direct_data_api_match": true,
+  "cross_user_read_hidden_both_directions": true,
+  "cross_user_write_rejected_both_directions_this_run": false,
+  "upsert_stable_id_and_note_clear_verified_this_run": false,
+  "invalid_mood_and_body_user_id_rejected_this_run": false,
+  "existing_test_date_overwritten": false
+}

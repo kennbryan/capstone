@@ -1,0 +1,21 @@
+{
+  "completed_utc": "2026-11-04T15:35:13.966446+00:00",
+  "checks_passed": [
+    "numeric_toc_selection_and_private_in_memory_render",
+    "late_failure_rolls_back_accounts_and_ddl",
+    "auth_baseline_difference_rolls_back_without_replacing_managed_history",
+    "single_transaction_restore_confirms_commit",
+    "account_identity_profile_ledger_counts",
+    "source_sessions_are_not_activated_on_target",
+    "broad_target_defaults_do_not_leak_hashes_or_ledger",
+    "restored_profile_rls_isolates_users",
+    "replay_does_not_overwrite_existing_target",
+    "auth_trigger_restored_after_data_import_without_duplicate_profiles",
+    "restored_email_trigger_updates_profile"
+  ],
+  "source_backup_read": false,
+  "hosted_connections": false,
+  "synthetic_cluster_stopped_and_removed": true,
+  "restore_sql_module_sha256": "e5d937e02da9ea7c5bb4fa4f8c5dbabc5cd04b7330f256c6bac4b7c688b64860",
+  "real_staging_restore_applied": false
+}
