@@ -375,13 +375,13 @@ class RemoteConfigMockSource implements RemoteConfigSource {
   }
 }
 
-/// `/auth/login` rejecting every non-demo account; `/me` returns nothing,
-/// so the cached profile is kept.
+/// Supabase sign-in rejecting every non-demo account. A seeded cached
+/// user counts as signed in: `/me` returns nothing, so the cache is kept.
 class FakeAuthSource implements AuthSource {
   const new();
 
   @override
-  Future<LoginResponseDto> login({
+  Future<UserDto> login({
     required String email,
     required String password,
   }) => Future.error(
@@ -389,5 +389,11 @@ class FakeAuthSource implements AuthSource {
   );
 
   @override
+  Future<bool> hasSession() async => true;
+
+  @override
   Future<UserDto?> me() async => null;
+
+  @override
+  Future<void> logout() async {}
 }

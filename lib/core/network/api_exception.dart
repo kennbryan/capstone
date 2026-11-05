@@ -5,6 +5,12 @@ enum ApiExceptionKind {
   network,
   timeout,
   unauthorized,
+
+  /// Signed in, but the account may not use this (403).
+  forbidden,
+
+  /// The request was rejected as invalid (400/413/415/422).
+  invalidInput,
   notFound,
   server,
   unknown,
@@ -32,8 +38,11 @@ class ApiException implements Exception {
       DioExceptionType.receiveTimeout => ApiExceptionKind.timeout,
       DioExceptionType.connectionError => ApiExceptionKind.network,
       DioExceptionType.badResponse => switch (status) {
-        401 || 403 => ApiExceptionKind.unauthorized,
+        401 => ApiExceptionKind.unauthorized,
+        403 => ApiExceptionKind.forbidden,
         404 => ApiExceptionKind.notFound,
+        408 => ApiExceptionKind.timeout,
+        400 || 413 || 415 || 422 => ApiExceptionKind.invalidInput,
         _ => ApiExceptionKind.server,
       },
       _ => ApiExceptionKind.unknown,

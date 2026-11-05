@@ -5,8 +5,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:msu_wellbeing/app.dart';
 import 'package:msu_wellbeing/core/config/app_config.dart';
 import 'package:msu_wellbeing/core/logging/app_logger.dart';
+import 'package:msu_wellbeing/core/network/session_source.dart';
 import 'package:msu_wellbeing/core/storage/preferences_service.dart';
+import 'package:msu_wellbeing/core/storage/secure_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +19,7 @@ Future<void> main() async {
   _catchUncaughtErrors();
   await initializeDateFormatting('id');
   final prefs = await SharedPreferences.getInstance();
+  final session = await _startSession(config);
 
   runApp(
     ProviderScope(
@@ -25,10 +29,28 @@ Future<void> main() async {
       overrides: [
         appConfigProvider.overrideWithValue(config),
         preferencesProvider.overrideWithValue(PreferencesService(prefs)),
+        sessionSourceProvider.overrideWithValue(session),
       ],
       child: const MsuWellbeingApp(),
     ),
   );
+}
+
+/// Connects Supabase Auth, restoring the saved session from secure
+/// storage and refreshing it in the background.
+Future<SessionSource> _startSession(AppConfig config) async {
+  if (!config.hasSupabase) return const NoSessionSource();
+  final supabase = await Supabase.initialize(
+    url: config.supabaseUrl,
+    publishableKey: config.supabasePublishableKey,
+    authOptions: const FlutterAuthClientOptions(
+      localStorage: SecureSessionStorage(FlutterSecureStorageService()),
+      detectSessionInUri: false,
+    ),
+    // The SDK's debug log can include auth details.
+    debug: false,
+  );
+  return SupabaseSessionSource(supabase.client.auth);
 }
 
 /// Records uncaught framework and async errors by type only (never their

@@ -1,61 +1,222 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:msu_wellbeing/core/config/app_config.dart';
+import 'package:msu_wellbeing/core/config/environment.dart';
 import 'package:msu_wellbeing/core/network/dio_client.dart';
+import 'package:msu_wellbeing/core/network/session_source.dart';
 
-class _Capture extends RequestInterceptorHandler {
-  RequestOptions? options;
+/// Answers 200 to the tokens in [valid] and 401 to anything else.
+class _Server implements HttpClientAdapter {
+  final valid = <String>{};
+  final seen = <String?>[];
+
+  /// Runs before each answer, e.g. to switch accounts mid-request.
+  FutureOr<void> Function()? beforeAnswer;
+
+  /// Thrown instead of answering.
+  Exception? failWith;
 
   @override
-  void next(RequestOptions requestOptions) => options = requestOptions;
-}
-
-class _ErrorCapture extends ErrorInterceptorHandler {
-  @override
-  void next(DioException error) {}
-}
-
-void main() {
-  var expired = 0;
-  final interceptor = AuthInterceptor(
-    readToken: () async => 'secret-token',
-    onUnauthorized: () => expired++,
-  );
-
-  Future<RequestOptions> send(String path) async {
-    final handler = _Capture();
-    await interceptor.onRequest(
-      RequestOptions(baseUrl: 'https://api.msu.example', path: path),
-      handler,
-    );
-    return handler.options!;
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final auth = options.headers['Authorization'] as String?;
+    seen.add(auth);
+    await beforeAnswer?.call();
+    if (failWith != null) throw failWith!;
+    final ok = auth != null && valid.contains(auth.substring(7));
+    return ResponseBody.fromString(ok ? '{}' : '{"error":"x"}', ok ? 200 : 401);
   }
 
-  test('the token is sent to our own API', () async {
-    final options = await send('/reports');
-    expect(options.headers['Authorization'], 'Bearer secret-token');
+  @override
+  void close({bool force = false}) {}
+}
+
+class _Session {
+  AuthToken? token;
+  AuthToken? Function()? onRefresh;
+  Exception? refreshError;
+  int refreshes = 0;
+
+  Future<AuthToken?> refresh() async {
+    refreshes++;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    if (refreshError != null) throw refreshError!;
+    return token = onRefresh?.call();
+  }
+}
+
+AuthToken _token(String user, int n) =>
+    AuthToken(accessToken: '$user-$n', userId: user);
+
+void main() {
+  late _Server server;
+  late _Session session;
+  late int expired;
+  late Dio dio;
+
+  setUp(() {
+    server = _Server();
+    session = _Session();
+    expired = 0;
+    dio = createDio(
+      config: const AppConfig(
+        apiBaseUrl: 'https://api.msu.example',
+        environment: Environment.dev,
+      ),
+      authInterceptor: (dio) => AuthInterceptor(
+        readToken: () async => session.token,
+        refresh: session.refresh,
+        retry: dio.fetch,
+        onUnauthorized: () => expired++,
+      ),
+    )..httpClientAdapter = server;
   });
 
-  test('the token is never sent to another host', () async {
-    final options = await send('https://other.example/collect');
-    expect(options.headers.containsKey('Authorization'), isFalse);
-  });
-
-  test('a 401 on login is a wrong password, not an expired session', () {
-    DioException unauthorized(String path) {
-      final request = RequestOptions(
-        baseUrl: 'https://api.msu.example',
-        path: path,
-      );
-      return DioException(
-        requestOptions: request,
-        response: Response<void>(requestOptions: request, statusCode: 401),
-      );
+  group('the token', () {
+    Future<String?> sentTo(String url) async {
+      session.token = _token('a', 1);
+      server.valid.add('a-1');
+      try {
+        await dio.get<void>(url);
+      } on DioException {
+        // Only the header matters here.
+      }
+      return server.seen.single;
     }
 
-    expired = 0;
-    interceptor
-      ..onError(unauthorized('/auth/login'), _ErrorCapture())
-      ..onError(unauthorized('/reports'), _ErrorCapture());
+    test('is sent to our own API', () async {
+      expect(await sentTo('/me'), 'Bearer a-1');
+    });
+
+    test('is never sent to another origin', () async {
+      expect(await sentTo('https://other.example/collect'), isNull);
+      server.seen.clear();
+      expect(await sentTo('http://api.msu.example/me'), isNull);
+      server.seen.clear();
+      expect(await sentTo('https://api.msu.example:8443/me'), isNull);
+    });
+  });
+
+  test('an expired token is refreshed once and the request retried', () async {
+    session
+      ..token = _token('a', 1)
+      ..onRefresh = () => _token('a', 2);
+    server.valid.add('a-2');
+
+    final response = await dio.get<void>('/me');
+
+    expect(response.statusCode, 200);
+    expect(server.seen, ['Bearer a-1', 'Bearer a-2']);
+    expect(session.refreshes, 1);
+    expect(expired, 0);
+  });
+
+  test('concurrent requests share one refresh', () async {
+    session
+      ..token = _token('a', 1)
+      ..onRefresh = () => _token('a', 2);
+    server.valid.add('a-2');
+
+    final responses = await Future.wait([
+      for (var i = 0; i < 3; i++) dio.get<void>('/checkins'),
+    ]);
+
+    expect(responses.map((r) => r.statusCode), [200, 200, 200]);
+    expect(session.refreshes, 1);
+    expect(expired, 0);
+  });
+
+  test('a refresh that cannot run (offline) keeps the session', () async {
+    session
+      ..token = _token('a', 1)
+      ..refreshError = const SocketException('offline');
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+
+    expect(expired, 0);
+    expect(session.token?.accessToken, 'a-1');
+  });
+
+  test('a rejected refresh signs out', () async {
+    session
+      ..token = _token('a', 1)
+      ..onRefresh = () => null;
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+
     expect(expired, 1);
+  });
+
+  test('a refreshed token that is still rejected signs out, no loop', () async {
+    session
+      ..token = _token('a', 1)
+      ..onRefresh = () => _token('a', 2);
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+
+    expect(server.seen, ['Bearer a-1', 'Bearer a-2']);
+    expect(session.refreshes, 1);
+    expect(expired, 1);
+  });
+
+  test('a late 401 for account A never signs out account B', () async {
+    session.token = _token('a', 1);
+    server.beforeAnswer = () {
+      // A signs out and B signs in while A's request is in flight.
+      session.token = _token('b', 1);
+      server.beforeAnswer = null;
+    };
+
+    await expectLater(
+      dio.post<void>('/checkins', data: {'mood': 3}),
+      throwsA(isA<DioException>()),
+    );
+
+    expect(expired, 0);
+    expect(session.refreshes, 0);
+    // A's request is never re-sent with B's token.
+    expect(server.seen, ['Bearer a-1']);
+  });
+
+  test('a retry is dropped when the account changes during refresh', () async {
+    session
+      ..token = _token('a', 1)
+      ..onRefresh = () => _token('b', 1);
+    server.valid.add('b-1');
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+
+    expect(server.seen, ['Bearer a-1']);
+    expect(expired, 0);
+  });
+
+  test('a 401 for a request sent without a session is reported', () async {
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+
+    expect(server.seen, [null]);
+    expect(expired, 1);
+  });
+
+  test('a timed-out POST is not retried', () async {
+    session.token = _token('a', 1);
+    server.failWith = DioException.receiveTimeout(
+      timeout: const Duration(seconds: 20),
+      requestOptions: RequestOptions(),
+    );
+
+    await expectLater(
+      dio.post<void>('/checkins', data: {'mood': 3}),
+      throwsA(isA<DioException>()),
+    );
+
+    expect(server.seen, hasLength(1));
+    expect(session.refreshes, 0);
   });
 }

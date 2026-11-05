@@ -1,37 +1,128 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:msu_wellbeing/core/config/app_config.dart';
 import 'package:msu_wellbeing/core/logging/app_logger.dart';
+import 'package:msu_wellbeing/core/network/session_source.dart';
 import 'package:msu_wellbeing/core/storage/secure_storage_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'dio_client.g.dart';
 
-/// Attaches the bearer token (only to our own API host, never to another
-/// server) and reports rejected sessions (401).
+/// Attaches the current access token (only to the client's own origin,
+/// never to another server) and handles rejected tokens (401):
+///
+/// - the session that sent the request is still current: refresh once
+///   (shared by concurrent requests) and retry once with the new token;
+/// - the server rejects the refresh: [onUnauthorized] (sign out);
+/// - the refresh cannot run (offline): pass the error on, stay signed in;
+/// - the request was sent by a session that has since ended or switched
+///   accounts: pass the error on, never sign the new account out;
+/// - the request was sent without a session: [onUnauthorized], which the
+///   auth controller ignores when nobody is signed in.
 class AuthInterceptor extends Interceptor {
-  new({required this.readToken, required this.onUnauthorized});
+  new({
+    required this.readToken,
+    required this.refresh,
+    required this.retry,
+    required this.onUnauthorized,
+  });
 
-  final Future<String?> Function() readToken;
+  final Future<AuthToken?> Function() readToken;
+
+  /// See [SessionSource.refresh].
+  final Future<AuthToken?> Function() refresh;
+
+  /// Sends a request again through the same client.
+  final Future<Response<dynamic>> Function(RequestOptions options) retry;
   final void Function() onUnauthorized;
+
+  static const _sentAs = 'auth.sentAs';
+  static const _retryFor = 'auth.retryFor';
+
+  Future<AuthToken?>? _refreshing;
+
+  /// Same scheme, host, and port as the client's base URL.
+  static bool _ownOrigin(RequestOptions options) {
+    final target = options.uri;
+    final base = Uri.parse(options.baseUrl);
+    return target.scheme == base.scheme &&
+        target.host == base.host &&
+        target.port == base.port;
+  }
 
   @override
   Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final sameHost = options.uri.host == Uri.parse(options.baseUrl).host;
-    final token = sameHost ? await readToken() : null;
-    if (token != null) options.headers['Authorization'] = 'Bearer $token';
+    if (!_ownOrigin(options)) {
+      options.headers.remove('Authorization');
+      return handler.next(options);
+    }
+    final token = await readToken();
+    final retryFor = options.extra[_retryFor];
+    if (retryFor != null && token?.userId != retryFor) {
+      // The account changed before the retry went out.
+      return handler.reject(
+        DioException(requestOptions: options, type: DioExceptionType.cancel),
+      );
+    }
+    options.extra[_sentAs] = token;
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer ${token.accessToken}';
+    } else {
+      options.headers.remove('Authorization');
+    }
     handler.next(options);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    // A 401 from the login endpoint means wrong credentials, not an expired
-    // session, so it must not trigger a sign-out.
-    final isLogin = err.requestOptions.path.endsWith('/auth/login');
-    if (err.response?.statusCode == 401 && !isLogin) onUnauthorized();
-    handler.next(err);
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    final options = err.requestOptions;
+    final sentAs = options.extra[_sentAs];
+    if (err.response?.statusCode != 401 || !_ownOrigin(options)) {
+      return handler.next(err);
+    }
+    if (sentAs is! AuthToken) {
+      // Sent without a session: if the app still shows someone signed
+      // in, their session is gone.
+      onUnauthorized();
+      return handler.next(err);
+    }
+    final current = await readToken();
+    if (current?.userId != sentAs.userId) return handler.next(err);
+    if (options.extra[_retryFor] != null) {
+      // Even the refreshed token was rejected.
+      onUnauthorized();
+      return handler.next(err);
+    }
+    final AuthToken? fresh;
+    if (current!.accessToken != sentAs.accessToken) {
+      fresh = current; // Another request already refreshed it.
+    } else {
+      try {
+        fresh = await (_refreshing ??= refresh().whenComplete(
+          () => _refreshing = null,
+        ));
+      } on Object {
+        return handler.next(err); // Offline: keep the session.
+      }
+    }
+    if (fresh == null) {
+      onUnauthorized();
+      return handler.next(err);
+    }
+    if (fresh.userId != sentAs.userId) return handler.next(err);
+    try {
+      options.extra[_retryFor] = sentAs.userId;
+      handler.resolve(await retry(options));
+    } on DioException catch (error) {
+      handler.next(error);
+    }
   }
 }
 
@@ -54,10 +145,11 @@ class _EventLogInterceptor extends Interceptor {
 
 /// Builds the configured [Dio]. Rejects `http://` base URLs outside dev.
 ///
-/// [baseUrl] defaults to the main API.
+/// [baseUrl] defaults to the main API. [authInterceptor] receives the
+/// client so it can retry requests through it.
 Dio createDio({
   required AppConfig config,
-  required AuthInterceptor authInterceptor,
+  required AuthInterceptor Function(Dio dio) authInterceptor,
   String? baseUrl,
   Duration receiveTimeout = const Duration(seconds: 20),
 }) {
@@ -70,12 +162,12 @@ Dio createDio({
       contentType: Headers.jsonContentType,
     ),
   );
-  dio.interceptors.add(authInterceptor);
+  dio.interceptors.add(authInterceptor(dio));
   if (!config.environment.isProd) dio.interceptors.add(_EventLogInterceptor());
   return dio;
 }
 
-/// Bumped whenever the API rejects the session; the auth controller
+/// Bumped whenever the session is rejected for good; the auth controller
 /// listens and signs the user out.
 @Riverpod(keepAlive: true)
 class SessionExpiry extends _$SessionExpiry {
@@ -85,10 +177,19 @@ class SessionExpiry extends _$SessionExpiry {
   void signal() => state++;
 }
 
-AuthInterceptor _authInterceptor(Ref ref) {
+AuthInterceptor Function(Dio) _authInterceptor(Ref ref) {
+  final session = ref.watch(sessionSourceProvider);
   final storage = ref.watch(secureStorageProvider);
-  return AuthInterceptor(
-    readToken: () => storage.read(SecureKeys.accessToken),
+  return (dio) => AuthInterceptor(
+    readToken: () async {
+      final real = await session.current();
+      if (real != null) return real;
+      // Demo accounts keep a device token; the backend rejects it.
+      final demo = await storage.read(SecureKeys.accessToken);
+      return demo == null ? null : AuthToken(accessToken: demo, userId: demo);
+    },
+    refresh: session.refresh,
+    retry: dio.fetch,
     onUnauthorized: () => ref.read(sessionExpiryProvider.notifier).signal(),
   );
 }

@@ -9,6 +9,8 @@ extension ErrorMessages on AppLocalizations {
       ApiExceptionKind.network => errorNetwork,
       ApiExceptionKind.timeout => errorTimeout,
       ApiExceptionKind.unauthorized => errorUnauthorized,
+      ApiExceptionKind.forbidden => errorForbidden,
+      ApiExceptionKind.invalidInput => errorInvalidInput,
       ApiExceptionKind.notFound => errorNotFound,
       ApiExceptionKind.server || ApiExceptionKind.unknown => errorGeneric,
     };

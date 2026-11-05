@@ -15,7 +15,8 @@ abstract class UserDto with _$UserDto {
   factory fromJson(Map<String, Object?> json) => _$UserDtoFromJson(json);
 }
 
-/// `POST /auth/login` response.
+/// A session created on the device (demo accounts only; real sessions
+/// are owned by `SessionSource`).
 @freezed
 abstract class LoginResponseDto with _$LoginResponseDto {
   const factory({

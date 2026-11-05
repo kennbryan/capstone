@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:msu_wellbeing/core/network/api_exception.dart';
 import 'package:msu_wellbeing/core/network/dio_client.dart';
+import 'package:msu_wellbeing/core/network/session_source.dart';
 import 'package:msu_wellbeing/core/storage/preferences_service.dart';
 import 'package:msu_wellbeing/features/auth/data/auth_repository_impl.dart';
 import 'package:msu_wellbeing/features/auth/domain/entities/user.dart';
@@ -19,10 +20,22 @@ class AuthController extends _$AuthController {
   @override
   Future<User?> build() async {
     ref.listen(sessionExpiryProvider, (_, _) {
+      // Nobody signed in (e.g. consent sync before login): nothing to end.
       // Demo sessions have no backend account, so the backend rejecting
       // their requests must not sign them out.
-      if (!(state.value?.isDemo ?? false)) unawaited(logout());
+      final user = state.value;
+      if (user != null && !user.isDemo) unawaited(logout());
     });
+    // Supabase ended the session by itself (e.g. revoked refresh token).
+    final ended = ref.watch(sessionSourceProvider).sessionEnded.listen(
+      (_) {
+        final user = state.value;
+        if (user != null && !user.isDemo) unawaited(logout());
+      },
+      // A failed refresh (e.g. offline) is not a sign-out.
+      onError: (Object _) {},
+    );
+    ref.onDispose(ended.cancel);
     final result = await ref.watch(authRepositoryProvider).restoreSession();
     return result.fold<User?>(
       onSuccess: (user) => user,
@@ -61,8 +74,16 @@ class AuthController extends _$AuthController {
     );
   }
 
+  Future<void>? _loggingOut;
+
   /// Clears tokens, chat history, consent, and cached user data.
-  Future<void> logout() async {
+  ///
+  /// Calls made while a logout is running join it (signing out of
+  /// Supabase reports the session as ended, which calls this again).
+  Future<void> logout() =>
+      _loggingOut ??= _logout().whenComplete(() => _loggingOut = null);
+
+  Future<void> _logout() async {
     await ref.read(authRepositoryProvider).logout();
     await ref.read(preferencesProvider).clearUserData();
     state = const AsyncData(null);

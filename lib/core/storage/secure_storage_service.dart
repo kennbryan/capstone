@@ -5,8 +5,11 @@ part 'secure_storage_service.g.dart';
 
 /// Keys for values kept in secure storage.
 abstract final class SecureKeys {
+  /// Device token of a demo account. Real sessions live in [authSession].
   static const accessToken = 'auth.access_token';
-  static const refreshToken = 'auth.refresh_token';
+
+  /// The Supabase session, owned by `SupabaseSessionSource`.
+  static const authSession = 'auth.supabase_session';
   static const user = 'auth.user';
   static const consentHistory = 'consent.history';
   static const appLockEnabled = 'security.app_lock';

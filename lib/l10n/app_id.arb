@@ -22,6 +22,8 @@
   "errorNetwork": "Tidak dapat terhubung. Periksa koneksi internetmu, lalu coba lagi.",
   "errorTimeout": "Koneksi terlalu lama. Silakan coba lagi.",
   "errorUnauthorized": "Sesimu sudah berakhir. Silakan masuk kembali.",
+  "errorForbidden": "Akunmu belum mendapat akses ke fitur ini. Hubungi admin MSU bila menurutmu ini keliru.",
+  "errorInvalidInput": "Data yang dikirim belum sesuai. Periksa lagi, lalu coba kembali.",
   "errorNotFound": "Data yang kamu cari tidak ditemukan.",
   "errorGeneric": "Terjadi kendala. Silakan coba lagi nanti.",
   "emptyTitle": "Belum ada data",
