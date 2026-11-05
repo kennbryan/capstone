@@ -120,6 +120,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ubah catatan'), findsOneWidget);
+
+    // Changing only the mood keeps the note (a save replaces the day).
+    await tester.tap(find.text('Ubah'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Sangat baik'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hari ini: Sangat baik'), findsOneWidget);
+    expect(find.text('Ubah catatan'), findsOneWidget);
   });
 
   testWidgets('report detail shows sections and the non-diagnosis footer', (

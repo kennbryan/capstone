@@ -38,11 +38,20 @@ class CheckInController extends _$CheckInController {
   }
 
   /// Saves today's mood. Returns the failure, or null on success.
+  ///
+  /// Never retried automatically: after a timeout the check-in may have
+  /// been saved, so the user reloads the day instead.
   Future<ApiException?> save({required int mood, String? note}) async {
+    final userId = ref.read(currentUserIdProvider);
     final today = DateFormatter.dateOnly(now());
     final result = await ref
         .read(checkInRepositoryProvider)
         .save(date: today, mood: mood, note: note);
+    // Signed out or switched accounts meanwhile: this result belongs to
+    // the previous user and must not reach the new one's screen.
+    if (!ref.mounted || ref.read(currentUserIdProvider) != userId) {
+      return null;
+    }
     return result.fold<ApiException?>(
       onSuccess: (saved) {
         final current = state.value;

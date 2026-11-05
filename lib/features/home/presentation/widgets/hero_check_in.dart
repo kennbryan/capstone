@@ -61,7 +61,13 @@ class _HeroCheckInState extends ConsumerState<HeroCheckIn> {
         onNote: () => _editNote(today),
       );
     }
-    return _Faces(selected: today?.mood, saving: _saving, onTap: _save);
+    return _Faces(
+      selected: today?.mood,
+      saving: _saving,
+      // Saving replaces the whole day, so keep today's note when only
+      // the mood changes.
+      onTap: (mood) => _save(mood, note: today?.note),
+    );
   }
 }
 
