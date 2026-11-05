@@ -1,0 +1,4 @@
+tags:
+  # Needs Supabase staging and a running backend; see
+  # test/staging/staging_flow_test.dart. Skipped without --dart-define.
+  staging:

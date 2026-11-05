@@ -14,6 +14,7 @@ import 'package:msu_wellbeing/features/auth/data/auth_repository_impl.dart';
 import 'package:msu_wellbeing/features/chat/data/chat_repository_impl.dart';
 import 'package:msu_wellbeing/features/chat/data/sources/chat_sources.dart';
 import 'package:msu_wellbeing/features/checkin/data/checkin_repository_impl.dart';
+import 'package:msu_wellbeing/features/checkin/domain/checkin_repository.dart';
 import 'package:msu_wellbeing/features/onboarding/data/consent_repository_impl.dart';
 import 'package:msu_wellbeing/features/onboarding/data/sources/consent_sources.dart';
 import 'package:msu_wellbeing/features/remote_config/data/remote_config_repository_impl.dart';
@@ -66,6 +67,9 @@ class TestDeps {
   final MockSettings mockSettings;
   final FakeAppLockService appLock = FakeAppLockService();
 
+  /// Replaces the mock check-in backend when set.
+  CheckInRepository? checkInRepository;
+
   List<Override> get overrides => [
     preferencesProvider.overrideWithValue(prefs),
     secureStorageProvider.overrideWithValue(secureStorage),
@@ -82,7 +86,8 @@ class TestDeps {
       AssessmentRepositoryImpl(AssessmentMockSource(mockSettings)),
     ),
     checkInRepositoryProvider.overrideWithValue(
-      CheckInRepositoryImpl(CheckInMockSource(mockSettings)),
+      checkInRepository ??
+          CheckInRepositoryImpl(CheckInMockSource(mockSettings)),
     ),
     chatRepositoryProvider.overrideWithValue(
       ChatRepositoryImpl(
