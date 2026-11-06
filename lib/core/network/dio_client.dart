@@ -18,8 +18,8 @@ part 'dio_client.g.dart';
 /// - the refresh cannot run (offline): pass the error on, stay signed in;
 /// - the request was sent by a session that has since ended or switched
 ///   accounts: pass the error on, never sign the new account out;
-/// - the request was sent without a session: [onUnauthorized], which the
-///   auth controller ignores when nobody is signed in.
+/// - the request was sent without a session: [onUnauthorized] only if no
+///   session is active when the response arrives.
 class AuthInterceptor extends Interceptor {
   new({
     required this.readToken,
@@ -40,7 +40,7 @@ class AuthInterceptor extends Interceptor {
   static const _sentAs = 'auth.sentAs';
   static const _retryFor = 'auth.retryFor';
 
-  Future<AuthToken?>? _refreshing;
+  final _refreshes = <(String, String), Future<AuthToken?>>{};
 
   /// Same scheme, host, and port as the client's base URL.
   static bool _ownOrigin(RequestOptions options) {
@@ -87,33 +87,44 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode != 401 || !_ownOrigin(options)) {
       return handler.next(err);
     }
+    final current = await readToken();
     if (sentAs is! AuthToken) {
-      // Sent without a session: if the app still shows someone signed
-      // in, their session is gone.
-      onUnauthorized();
+      // A request from before login cannot invalidate the new session.
+      if (current == null) onUnauthorized();
       return handler.next(err);
     }
-    final current = await readToken();
-    if (current?.userId != sentAs.userId) return handler.next(err);
+    if (current == null || current.userId != sentAs.userId) {
+      return handler.next(err);
+    }
     if (options.extra[_retryFor] != null) {
-      // Even the refreshed token was rejected.
-      onUnauthorized();
+      // The retried request may have used a token that was replaced again.
+      if (current.accessToken == sentAs.accessToken) onUnauthorized();
       return handler.next(err);
     }
     final AuthToken? fresh;
-    if (current!.accessToken != sentAs.accessToken) {
+    if (current.accessToken != sentAs.accessToken) {
       fresh = current; // Another request already refreshed it.
     } else {
       try {
-        fresh = await (_refreshing ??= refresh().whenComplete(
-          () => _refreshing = null,
-        ));
+        final key = (sentAs.userId, sentAs.accessToken);
+        fresh = await _refreshes.putIfAbsent(
+          key,
+          () => refresh().whenComplete(() {
+            unawaited(_refreshes.remove(key));
+          }),
+        );
       } on Object {
         return handler.next(err); // Offline: keep the session.
       }
     }
     if (fresh == null) {
-      onUnauthorized();
+      // A sign-in or another refresh may have completed while we waited.
+      final latest = await readToken();
+      if (latest == null ||
+          (latest.userId == sentAs.userId &&
+              latest.accessToken == sentAs.accessToken)) {
+        onUnauthorized();
+      }
       return handler.next(err);
     }
     if (fresh.userId != sentAs.userId) return handler.next(err);
