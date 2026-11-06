@@ -41,6 +41,7 @@ class _Server implements HttpClientAdapter {
 class _Session {
   AuthToken? token;
   AuthToken? Function()? onRefresh;
+  Future<AuthToken?> Function()? refreshOverride;
   Exception? refreshError;
   int refreshes = 0;
 
@@ -48,6 +49,8 @@ class _Session {
     refreshes++;
     await Future<void>.delayed(const Duration(milliseconds: 5));
     if (refreshError != null) throw refreshError!;
+    final override = refreshOverride;
+    if (override != null) return await override();
     return token = onRefresh?.call();
   }
 }
@@ -202,6 +205,87 @@ void main() {
 
     expect(server.seen, [null]);
     expect(expired, 1);
+  });
+
+  test('a late anonymous 401 keeps the new session', () async {
+    server.beforeAnswer = () {
+      session.token = _token('b', 1);
+      server.valid.add('b-1');
+      server.beforeAnswer = null;
+    };
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+    expect(server.seen, [null]);
+    expect(session.refreshes, 0);
+    expect(expired, 0);
+    expect((await dio.get<void>('/me')).statusCode, 200);
+    expect(server.seen, [null, 'Bearer b-1']);
+  });
+
+  test('a rejected refresh for account A keeps account B signed in', () async {
+    session
+      ..token = _token('a', 1)
+      ..refreshOverride = () async {
+        session.token = _token('b', 1);
+        return null;
+      };
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+    expect(server.seen, ['Bearer a-1']);
+    expect(session.refreshes, 1);
+    expect(expired, 0);
+  });
+
+  test(
+    'account B refreshes separately while account A is refreshing',
+    () async {
+      final startedA = Completer<void>();
+      final rejectedA = Completer<AuthToken?>();
+      session
+        ..token = _token('a', 1)
+        ..refreshOverride = () async {
+          if (session.token?.userId == 'a') {
+            startedA.complete();
+            return await rejectedA.future;
+          }
+          return session.token = _token('b', 2);
+        };
+      server.valid.add('b-2');
+
+      final responseA = expectLater(
+        dio.get<void>('/me'),
+        throwsA(isA<DioException>()),
+      );
+      await startedA.future;
+      session.token = _token('b', 1);
+      try {
+        final responseB = await dio
+            .get<void>('/me')
+            .timeout(const Duration(seconds: 5));
+        expect(responseB.statusCode, 200);
+      } finally {
+        rejectedA.complete(null);
+        await responseA;
+      }
+
+      expect(server.seen, ['Bearer a-1', 'Bearer b-1', 'Bearer b-2']);
+      expect(session.refreshes, 2);
+      expect(expired, 0);
+    },
+  );
+
+  test('a late retry 401 keeps a newer token for the same account', () async {
+    session
+      ..token = _token('a', 1)
+      ..onRefresh = () => _token('a', 2);
+    server.beforeAnswer = () {
+      if (server.seen.length == 2) session.token = _token('a', 3);
+    };
+
+    await expectLater(dio.get<void>('/me'), throwsA(isA<DioException>()));
+    expect(server.seen, ['Bearer a-1', 'Bearer a-2']);
+    expect(session.refreshes, 1);
+    expect(expired, 0);
   });
 
   test('a timed-out POST is not retried', () async {
