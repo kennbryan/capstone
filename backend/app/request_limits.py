@@ -1,4 +1,4 @@
-"""Bound check-in JSON before FastAPI parses it, without logging request data."""
+"""Bound JSON bodies before FastAPI parses them, without logging request data."""
 
 import asyncio
 import json
@@ -7,7 +7,7 @@ from starlette.responses import JSONResponse
 
 from .auth import MESSAGES
 
-MAX_BODY_BYTES = 4096
+POST_BODY_LIMITS = {"/checkins": 4096, "/chatbot/messages": 64 * 1024}
 
 
 def unique_object(pairs):
@@ -19,12 +19,16 @@ def unique_object(pairs):
     return result
 
 
-class CheckInBodyLimit:
+class JsonBodyLimit:
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["path"].rstrip("/") != "/checkins" or scope["method"] != "POST":
+        if scope["type"] != "http" or scope["method"] != "POST":
+            await self.app(scope, receive, send)
+            return
+        max_bytes = POST_BODY_LIMITS.get(scope["path"].rstrip("/"))
+        if max_bytes is None:
             await self.app(scope, receive, send)
             return
 
@@ -49,7 +53,7 @@ class CheckInBodyLimit:
                         return
                     chunk = message.get("body", b"")
                     size += len(chunk)
-                    if size > MAX_BODY_BYTES:
+                    if size > max_bytes:
                         await reject(413, "PAYLOAD_TOO_LARGE")
                         return
                     chunks.append(chunk)

@@ -112,6 +112,41 @@ isolasi baca/tulis check-in dan baca ulang dari proses baru. /me dan riwayat dua
 akun lulus melalui HTTP port 8002; laporan `docs/evidence/staging-http-verification.json`.
 POST check-in HTTP dan integrasi UI Flutter masih perlu diuji.
 
+## Gateway pesan chatbot
+
+POST /chatbot/messages memakai token Supabase pengguna yang sama dengan /me.
+Akun PARTICIPANT aktif dapat mengirim JSON berisi text (1–4000 karakter),
+conversationId (opsional) dan displayName (opsional). Gateway membangun request
+ke endpoint /chatbot/messages di layanan chatbot. X-User-Id diambil dari
+profil terverifikasi dan X-Service-Key berasal dari konfigurasi server.
+Respons 200 mengikuti kontrak Flutter, termasuk type normal/crisis, sources,
+suggestions dan actions.
+
+Atur kedua variabel pada proses backend untuk uji sambungan lokal:
+
+| Variabel | Isi |
+| --- | --- |
+| CHATBOT_BASE_URL | http://127.0.0.1:8000 saat chatbot berjalan pada laptop yang sama |
+| CHATBOT_SERVICE_KEY | Nilai SERVICE_API_KEY yang disepakati untuk layanan chatbot uji |
+
+Gunakan HTTPS untuk tujuan non-loopback. Untuk peluncur tools.serve_staging,
+masukkan variabel ini melalui environment proses. Peluncur itu memakai prompt
+tersembunyi untuk publishable key Supabase. Jalankan layanan chatbot uji dengan
+MOBILE_DEMO_TOKENS=false dan SERVICE_API_KEY yang cocok sebelum uji langsung.
+Simpan service key di sisi server.
+
+Untuk uji dari Flutter, arahkan CHATBOT_BASE_URL pada konfigurasi Flutter ke
+alamat backend utama. Jika kosong, aplikasi menggunakan API_BASE_URL.
+
+Jika gateway belum dikonfigurasi atau chatbot gagal merespons, pengguna sah
+menerima 503 CHATBOT_UNAVAILABLE. Token pengguna ditolak dengan 401 jika sesi
+tidak sah dan 403 jika profil tidak berhak. Gateway membatasi request JSON
+ke 64 KiB, balasan ke 256 KiB dan waktu panggilan chatbot ke 30 detik.
+Pesan yang sudah diteruskan tidak diulang otomatis setelah timeout.
+
+Tes lokal dengan Supabase dan chatbot tiruan tersedia di
+tests/test_chat_gateway.py. Lingkup integrasi tahap ini adalah kirim satu pesan.
+
 ## Kontrak check-in dan database
 
 Backup sebelum penerapan: [BACKUP-BEFORE-CHECKINS.md](docs/BACKUP-BEFORE-CHECKINS.md).
