@@ -11,9 +11,10 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .auth import ApiError, MESSAGES, ProfileService, unauthorized
+from .chat_gateway import CHAT_TIMEOUT_SECONDS, ChatGateway, ChatMessageInput, ChatMessageResponse
 from .config import Settings, load_settings
 from .checkins import CheckInInput, CheckInRange, CheckInResponse, CheckInService
-from .request_limits import CheckInBodyLimit
+from .request_limits import JsonBodyLimit
 from .schemas import ErrorResponse, MeResponse
 
 bearer = HTTPBearer(auto_error=False)
@@ -42,6 +43,10 @@ def checkin_service(request: Request) -> CheckInService:
     return request.app.state.checkin_service
 
 
+def chat_gateway(request: Request) -> ChatGateway:
+    return request.app.state.chat_gateway
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -56,15 +61,24 @@ def create_app(
             trust_env=False,
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             transport=transport,
-        ) as client:
+        ) as client, httpx.AsyncClient(
+            timeout=httpx.Timeout(CHAT_TIMEOUT_SECONDS, connect=3.0, pool=2.0),
+            follow_redirects=False,
+            trust_env=False,
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+            transport=transport,
+        ) as chatbot_client:
             application.state.profile_service = ProfileService(configured, client)
             application.state.checkin_service = CheckInService(
                 configured, client, application.state.profile_service,
             )
+            application.state.chat_gateway = ChatGateway(
+                configured, chatbot_client, application.state.profile_service,
+            )
             yield
 
     application = FastAPI(title="MSU Well-being Backend", version="0.2.0", lifespan=lifespan)
-    application.add_middleware(CheckInBodyLimit)
+    application.add_middleware(JsonBodyLimit)
 
     @application.middleware("http")
     async def private_response(request: Request, call_next):
@@ -140,6 +154,22 @@ def create_app(
         if request.query_params:
             raise ApiError(422, "VALIDATION_ERROR")
         return await service.save(token, body)
+
+    @application.post(
+        "/chatbot/messages",
+        response_model=ChatMessageResponse,
+        responses={code: {"model": ErrorResponse} for code in (401, 403, 408, 413, 415, 422, 503)},
+        summary="Kirim pesan melalui gateway chatbot",
+    )
+    async def send_chatbot_message(
+        request: Request,
+        body: ChatMessageInput,
+        token: Annotated[str, Depends(access_token)],
+        service: Annotated[ChatGateway, Depends(chat_gateway)],
+    ) -> ChatMessageResponse:
+        if request.query_params:
+            raise ApiError(422, "VALIDATION_ERROR")
+        return await service.send(token, body)
 
     return application
 

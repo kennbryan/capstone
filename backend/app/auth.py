@@ -14,6 +14,7 @@ MESSAGES = {
     "FORBIDDEN": "Profil akun tidak tersedia atau tidak memiliki akses.",
     "SERVICE_UNAVAILABLE": "Profil belum dapat dimuat. Silakan coba lagi.",
     "CHECKINS_UNAVAILABLE": "Check-in belum dapat diproses. Silakan coba lagi.",
+    "CHATBOT_UNAVAILABLE": "Asisten belum dapat dihubungi. Silakan coba lagi.",
     "VALIDATION_ERROR": "Data permintaan tidak valid. Periksa tanggal, mood, dan catatan.",
     "PAYLOAD_TOO_LARGE": "Ukuran permintaan terlalu besar.",
     "UNSUPPORTED_MEDIA_TYPE": "Gunakan Content-Type application/json.",

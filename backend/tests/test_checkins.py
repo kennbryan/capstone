@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from app.main import create_app
-from app.request_limits import CheckInBodyLimit
+from app.request_limits import JsonBodyLimit
 from tests.helpers import KEY, TOKEN_A, TOKEN_B, USER_A, USER_B, local_client, settings
 
 DATE = "2026-11-04"
@@ -354,7 +354,7 @@ def test_body_timeout_is_safe(monkeypatch):
             sent.append(message)
         async def must_not_run(scope, receive, send):
             pytest.fail("Timed-out request reached the application")
-        await CheckInBodyLimit(must_not_run)(
+        await JsonBodyLimit(must_not_run)(
             {"type": "http", "path": "/checkins", "method": "POST",
              "headers": [(b"content-type", b"application/json")]}, receive, send,
         )
@@ -371,7 +371,7 @@ def test_disconnected_body_does_not_reach_application():
             pytest.fail("Disconnected client should not receive a response")
         async def must_not_run(scope, receive, send):
             pytest.fail("Disconnected request reached the application")
-        await CheckInBodyLimit(must_not_run)(
+        await JsonBodyLimit(must_not_run)(
             {"type": "http", "path": "/checkins", "method": "POST",
              "headers": [(b"content-type", b"application/json")]}, receive, send,
         )
@@ -391,7 +391,7 @@ def test_chunked_body_limit_does_not_trust_content_length():
             sent.append(message)
         async def must_not_run(scope, receive, send):
             pytest.fail("Oversized request reached the application")
-        await CheckInBodyLimit(must_not_run)(
+        await JsonBodyLimit(must_not_run)(
             {"type": "http", "path": "/checkins", "method": "POST",
              "headers": [(b"content-type", b"application/json"), (b"content-length", b"2")]},
             receive, send,
