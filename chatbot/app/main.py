@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import delete, select
@@ -14,6 +15,7 @@ from .pipeline import ChatPipeline, SessionNotFound
 from .rag.retriever import Retriever
 from .resources import load_resources
 from .schemas import ChatRequest, ChatResponse, MemoryOut, MessageOut, SessionOut, SummaryDraftResponse
+from .supabase_auth import SupabaseVerifier
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -27,7 +29,14 @@ async def lifespan(app: FastAPI):
         await retriever.build(llm)
         session_factory = make_session_factory(make_engine())
         app.state.pipeline = ChatPipeline(settings, llm, retriever, load_resources(DATA_DIR), session_factory)
+    http = None
+    if not getattr(app.state, "verifier", None) and settings.supabase_url and settings.supabase_publishable_key:
+        # Tanpa redirect dan tanpa proxy dari environment; token pengguna tidak disimpan di client.
+        http = httpx.AsyncClient(timeout=5.0, follow_redirects=False, trust_env=False)
+        app.state.verifier = SupabaseVerifier(settings.supabase_url, settings.supabase_publishable_key, http)
     yield
+    if http is not None:
+        await http.aclose()
 
 
 app = FastAPI(

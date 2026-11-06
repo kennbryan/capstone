@@ -20,8 +20,16 @@ class Settings(BaseSettings):
     utility_reasoning_effort: str = "low"
 
     database_url: str = f"sqlite:///{(RUNTIME_DIR / 'chatbot.db').as_posix()}"
+    # Postgres (Supabase): tabel chatbot berada di schema ini, dibuat lewat migrations/*.sql.
+    database_schema: str = "chatbot"
+    # Pada Postgres, tabel tidak dibuat saat startup (ikuti migrasi). Aktifkan hanya untuk uji lokal.
+    database_auto_create: bool = False
     service_api_key: str = ""
     bot_name: str = "Teman MSU"
+
+    # Supabase Auth: token login aplikasi diverifikasi ke project ini (hanya publishable key).
+    supabase_url: str = ""
+    supabase_publishable_key: str = ""
 
     # Aplikasi mobile (/chatbot/*)
     mobile_demo_tokens: bool = True  # terima token akun demo "demo-session-<userId>"
