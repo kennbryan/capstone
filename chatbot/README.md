@@ -75,6 +75,7 @@ How the reply is mapped for the app:
 The user is identified from headers, never from the body:
 
 - `Authorization: Bearer demo-session-<userId>`: the device token of the app's demo accounts. Accepted while `MOBILE_DEMO_TOKENS=true` (default). Set it to `false` in production.
+- `Authorization: Bearer <Supabase access token>`: the real login session of the app. Verified against Supabase Auth (and the user's own active `PARTICIPANT` profile) when `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set. See [docs/SUPABASE.md](docs/SUPABASE.md).
 - `X-Service-Key` + `X-User-Id`: for the main backend, which verifies real accounts and forwards the request.
 
 **Production note:** never ship `SERVICE_API_KEY` inside the app. Real accounts reach this service through the main backend, which checks the user's session and adds `X-Service-Key` and `X-User-Id`.
