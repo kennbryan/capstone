@@ -87,9 +87,17 @@ def make_engine(url: str | None = None):
     if url.startswith("sqlite"):
         RUNTIME_DIR.mkdir(exist_ok=True)
         return create_engine(url, connect_args={"check_same_thread": False})
-    return create_engine(url, pool_pre_ping=True)
+    settings = get_settings()
+    connect_args = {}
+    if url.startswith("postgresql"):
+        # Tabel chatbot berada di schema khusus; prepare_threshold=None agar kompatibel dengan
+        # pooler Supabase mode transaksi (port 6543).
+        connect_args = {"options": f"-c search_path={settings.database_schema}", "prepare_threshold": None}
+    return create_engine(url, pool_pre_ping=True, connect_args=connect_args)
 
 
 def make_session_factory(engine) -> sessionmaker:
-    Base.metadata.create_all(engine)
+    # Postgres/Supabase: skema dikelola migrations/*.sql, bukan dibuat saat startup.
+    if engine.dialect.name == "sqlite" or get_settings().database_auto_create:
+        Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)

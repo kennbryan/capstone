@@ -5,6 +5,8 @@ key camelCase, balasan krisis bertipe "crisis", dan saran latihan memakai
 `suggestions[].kind` (breathing, release, sounds, article).
 
 Identitas pengguna diambil dari header, bukan dari body:
+- `Authorization: Bearer <access token Supabase>` dari login aplikasi; token diverifikasi
+  ke Supabase Auth (aktif jika SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY diisi);
 - `Authorization: Bearer demo-session-<userId>` untuk akun demo aplikasi
   (aktif jika MOBILE_DEMO_TOKENS=true);
 - `X-Service-Key` + `X-User-Id` jika permintaan diteruskan backend utama
@@ -23,6 +25,7 @@ from .db import ChatSession, UserMemory
 from .memory import update_memory
 from .pipeline import ChatPipeline, SessionNotFound
 from .schemas import ChatRequest
+from .supabase_auth import AuthRejected, AuthUnavailable
 
 DEMO_TOKEN_PREFIX = "demo-session-"
 
@@ -92,7 +95,8 @@ def pipeline(request: Request) -> ChatPipeline:
     return request.app.state.pipeline
 
 
-def current_user(
+async def current_user(
+    request: Request,
     authorization: str | None = Header(None),
     x_service_key: str | None = Header(None),
     x_user_id: str | None = Header(None),
@@ -105,8 +109,16 @@ def current_user(
         user_id = token.removeprefix(DEMO_TOKEN_PREFIX)
         if 0 < len(user_id) <= 64:
             return user_id
-    # Token akun asli diverifikasi backend utama, lalu diteruskan dengan X-User-Id.
-    raise HTTPException(401, "sesi tidak dikenali")
+    verifier = getattr(request.app.state, "verifier", None)
+    if token and verifier is not None:
+        try:
+            return await verifier.user_id(token)
+        except AuthRejected as e:
+            raise HTTPException(e.status_code, "sesi tidak valid atau akun tidak diizinkan",
+                                headers={"WWW-Authenticate": "Bearer"} if e.status_code == 401 else None)
+        except AuthUnavailable:
+            raise HTTPException(503, "verifikasi sesi belum dapat diproses", headers={"Retry-After": "5"})
+    raise HTTPException(401, "sesi tidak dikenali", headers={"WWW-Authenticate": "Bearer"})
 
 
 def _activity_payload(activity: dict) -> dict:
